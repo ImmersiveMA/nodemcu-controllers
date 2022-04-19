@@ -15,7 +15,6 @@ void Flower::handleAnimation() {
 
   if(delaying) {
     if(delayEnd < millis()) {
-      Serial.print("hi\n");
       delaying = false;
     }
     return;
@@ -102,7 +101,7 @@ void Flower::fadeOut(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
   this->i = 100;
   this->j = wait;
 
-this->animationFunction = &Flower::fadeOutLoop;
+  this->animationFunction = &Flower::fadeOutLoop;
 }
 
 void Flower::fadeOutLoop() {
@@ -127,7 +126,7 @@ void Flower::fadeIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
 }
 
 void Flower::fadeInLoop() {
-    this->strip.fill(this->strip.Color((this->r / 100.00 * this->i), (this->g / 100.00 * this->i), (this->b / 100.00 * this->i)), this->firstLED, this->lastLED - this->firstLED);
+  this->strip.fill(this->strip.Color((this->r / 100.00 * this->i), (this->g / 100.00 * this->i), (this->b / 100.00 * this->i)), this->firstLED, this->lastLED - this->firstLED);
 
   if(this->i == 100) {
     this->animationFunction = nullptr;
