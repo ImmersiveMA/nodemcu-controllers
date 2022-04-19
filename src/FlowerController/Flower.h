@@ -10,23 +10,44 @@ private:
   uint16_t leds;
   uint16_t pin;
 
-  // Deze functie zorgt ervoor dat een led integer nooit hoger is dan het aantal leds dat we hebben.
-  // Wordt alleen intern gebruikt dus dw about the naming. (●'◡'●)
+  uint8_t r, g, b;
+  uint32_t color;
+
+	uint16_t firstLED, lastLED;
+	uint16_t i, j, h;
+
+	uint8_t* arr = nullptr;
+	uint16_t arrSize;
+
+  void (Flower::*animationFunction)();
+
+  bool delaying = false;
+  unsigned long delayEnd;
+
   uint16_t clampLED(uint16_t LED);
+  void delay(int delayTime);
+
+  void walkInLoop();
+  void walkBackLoop();
+
+  void fadeOutLoop();
+  void fadeInLoop();
+  void fadeWalkLoop();
 
 public:
   Flower(uint16_t leds, uint16_t pin, uint8_t brightness);
+  void handleAnimation();
+  bool isAnimationFinished();
 
-  void setColor(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue);
+  void setColor(uint8_t red, uint8_t green, uint8_t blue);
   void setBrightness(uint8_t brightness);
 
-  // 1 voor 1 AAN. (geen fade)
-  void walkIn(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100);
-  void walkBack(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100);
+  void walkIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
+  void walkBack(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
 
-  void fadeOut(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100);
-  void fadeIn(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100);
-  void fadeWalk(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100);
-}
+  void fadeOut(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
+  void fadeIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
+  void fadeWalk(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
+};
 
 #endif

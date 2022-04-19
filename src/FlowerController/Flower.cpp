@@ -1,13 +1,37 @@
 #include "Flower.h"
 
 Flower::Flower(uint16_t leds, uint16_t pin, uint8_t brightness) {
-  this.leds = leds;
-  this.pin = pin;
+  this->leds = leds;
+  this->pin = pin;
   
   strip = Adafruit_NeoPixel(leds, pin, NEO_RGB + NEO_KHZ800);
   strip.setBrightness(brightness);
   strip.begin();
   strip.show();
+}
+
+void Flower::handleAnimation() {
+  if(this->animationFunction == nullptr) return;
+
+  if(delaying) {
+    if(delayEnd < millis()) {
+      Serial.print("hi\n");
+      delaying = false;
+    }
+    return;
+  }
+
+  (this->*animationFunction)();
+}
+
+bool Flower::isAnimationFinished() {
+  if(this->animationFunction == nullptr) return true;
+  return false;
+}
+
+void Flower::delay(int delayTime) {
+  this->delaying = true;
+  this->delayEnd = millis() + delayTime;
 }
 
 // Normaal gesproken zou je een error throwen als een led argument out of range is, maar dit is een ez fix. =￣ω￣=
@@ -16,82 +40,138 @@ uint16_t Flower::clampLED(uint16_t LED) {
   return LED;
 }
 
-void Flower::setColor(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue) {
-  lastLED = clampLED(lastLED);
+void Flower::setColor(uint8_t red, uint8_t green, uint8_t blue) {
+  this->r = red;
+  this->g = green;
+  this->b = blue;
 
-  strip.fill(strip.Color(r, g, b), firstLED, lastLED - firstLED);
+  this->color = strip.Color(red, green, blue);
 }
 
 // Dit ziet er zo dom uit maar het is simpel en het werkt, so don't judge. ╰（‵□′）╯
 void Flower::setBrightness(uint8_t brightness) {
-  strip.setBrightness(brightness);
+  this->strip.setBrightness(brightness);
 }
 
-void Flower::walkIn(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100) {
-  lastLED = clampLED(lastLED);
+void Flower::walkIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
+  this->lastLED = clampLED(lastLED);
+  this->i = firstLED;
+  this->j = wait;
 
-  uint32_t color = strip.Color(r, g, b);
-
-  for(int i = firstLED; i <= lastLED; i++) {
-    strip.setPixelColor(i, color);
-    strip.show();
-    delay(wait);
-  }
+  this->animationFunction = &Flower::walkInLoop;
 }
 
-void Flower::walkOut(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100) {
-  lastLED = clampLED(lastLED);
+void Flower::walkInLoop() {
+  this->strip.setPixelColor(this->i, this->color);
+  this->strip.show();
 
-  uint32_t color = strip.Color(r, g, b);
-
-  for(int i = lastLED; i >= firstLED; i--) {
-    strip.setPixelColor(i, color);
-    strip.show();
-    delay(wait);
-  }
-}
-
-void Flower::fadeOut(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100) {
-  lastLED = clampLED(lastLED);
-
-  for(int i = 100; i >= 0; i -= 10) {
-    strip.fill(strip.Color((r / 100.00 * i), (g / 100.00 * i), (b / 100.00 * i)), firstLED, lastLED - firstLED);
-  }
-}
-
-void Flower::fadeIn(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100) {
-  lastLED = clampLED(lastLED);
-
-  for(int i = 0; i <= 100; i += 10) {
-    strip.fill(strip.Color((r / 100.00 * i), (g / 100.00 * i), (b / 100.00 * i)), firstLED, lastLED - firstLED);
-  }
-}
-
-void Flower::fadeWalk(uint16_t firstLED, uint16_t lastLED, uint8_t red, uint8_t green, uint8_t blue, uint32_t wait = 100) {
-  lastLED = clampLED(lastLED);
-
-  uint16_t size = lastLED - firstLED;
-  uint8_t* brightnessArray = new uint8_t[size] { size * 0};
-  uint16_t i = 0;
-
-  while(brightnessArray[size - 1] != 100) {
-    for(uint16_t j = 0; j <= i; j++) {
-      if(brightnessArray[j] == 100) continue;
-
-      brightnessArray[j] += 10;
-
-      // firstLED is basically de offset, als we in de midden van de LEDs beginnen weet de array dat niet. ╯︿╰
-      strip.setPixelColor(j + firstLED, strip.Color((r / 100.00 * brightnessArray[j]), (g / 100.00 * brightnessArray[j]), (b / 100.00 * brightnessArray[j])));
-    }
-
-    if (i < size - 1) i++;
-    strip.show();
-    delay(wait);
+  if(this->i == this->lastLED) {
+    Serial.print(3);
+    this->animationFunction = nullptr;
+    return;
   }
 
-  delete[] brightnessArray;
+  this->i++;
+  this->delay(this->j);
 }
 
+void Flower::walkBack(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
+  this->firstLED = firstLED;
+  this->i = clampLED(lastLED);
+  this->j = wait;
 
+  this->animationFunction = &Flower::walkBackLoop;
+}
+
+void Flower::walkBackLoop() {
+  this->strip.setPixelColor(this->i, this->color);
+  this->strip.show();
+
+  if(this->i == this->firstLED) {
+    this->animationFunction = nullptr;
+    return;
+  }
+
+  this->i--;
+  this->delay(this->j);
+}
+
+void Flower::fadeOut(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
+  this->lastLED = clampLED(lastLED);
+  this->firstLED = firstLED;
+  this->i = 100;
+  this->j = wait;
+
+this->animationFunction = &Flower::fadeOutLoop;
+}
+
+void Flower::fadeOutLoop() {
+  this->strip.fill(this->strip.Color((this->r / 100.00 * this->i), (this->g / 100.00 * this->i), (this->b / 100.00 * this->i)), this->firstLED, this->lastLED - this->firstLED);
+
+  if(this->i == 0) {
+    this->animationFunction = nullptr;
+    return;
+  }
+
+  this->i -= 10;
+  this->delay(this->j);
+}
+
+void Flower::fadeIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
+  this->lastLED = clampLED(lastLED);
+  this->firstLED = firstLED;
+  this->i = 0;
+  this->j = wait;
+
+  this->animationFunction = &Flower::fadeInLoop;
+}
+
+void Flower::fadeInLoop() {
+    this->strip.fill(this->strip.Color((this->r / 100.00 * this->i), (this->g / 100.00 * this->i), (this->b / 100.00 * this->i)), this->firstLED, this->lastLED - this->firstLED);
+
+  if(this->i == 100) {
+    this->animationFunction = nullptr;
+    return;
+  }
+
+  this->i += 10;
+  this->delay(this->j);
+}
+
+void Flower::fadeWalk(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
+  this->firstLED = firstLED;
+
+  this->arrSize = clampLED(lastLED) - firstLED;
+  this->arr = new uint8_t[arrSize] { arrSize * 0 };
+  this->i = 0;
+  this->j = 0;
+  this->h = wait;
+
+  this->animationFunction = &Flower::fadeWalkLoop;
+}
+
+void Flower::fadeWalkLoop() {
+  if(this->arr[this->j] != 100) {
+    this->arr[this->j] += 10;
+    this->strip.setPixelColor(this->j + this->firstLED, this->strip.Color((this->r / 100.00 * this->arr[this->j]), (this->g / 100.00 * this->arr[this->j]), (this->b / 100.00 * this->arr[this->j])));
+  }
+
+  if(this->arr[this->arrSize - 1] == 100) {
+    this->animationFunction = nullptr;
+
+    delete[] this->arr;
+    this->arr = nullptr;
+
+    return;
+  }
+
+  if(this->j == this->i) {
+    if(this->i < this->arrSize - 1) this->i++;
+    this->j = 0;
+  } else this->j++;
+
+  this->strip.show();
+  this->delay(this->h);
+}
 
 
