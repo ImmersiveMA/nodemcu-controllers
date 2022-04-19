@@ -1,10 +1,10 @@
-#ifndef FLOWER_H
-#define FLOWER_H
+#ifndef PixelController_H
+#define PixelController_H
 
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
 
-class Flower {
+class PixelController {
 private:
   Adafruit_NeoPixel strip;
   uint16_t leds;
@@ -19,7 +19,7 @@ private:
 	uint8_t* arr = nullptr;
 	uint16_t arrSize;
 
-  void (Flower::*animationFunction)();
+  void (PixelController::*animationFunction)();
 
   bool delaying = false;
   unsigned long delayEnd;
@@ -35,7 +35,7 @@ private:
   void fadeWalkLoop();
 
 public:
-  Flower(uint16_t leds, uint16_t pin, uint8_t brightness);
+  PixelController(uint16_t leds, uint16_t pin, uint8_t brightness);
   void handleAnimation();
   bool isAnimationFinished();
 
