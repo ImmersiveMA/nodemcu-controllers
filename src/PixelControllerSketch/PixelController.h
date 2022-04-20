@@ -1,5 +1,5 @@
-#ifndef PixelController_H
-#define PixelController_H
+#ifndef PIXELCONTROLLER_H
+#define PIXELCONTROLLER_H
 
 #include <stdint.h>
 #include <Adafruit_NeoPixel.h>
@@ -34,6 +34,8 @@ private:
   void fadeInLoop();
   void fadeWalkLoop();
 
+  void solidLoop();
+
 public:
   PixelController(uint16_t leds, uint16_t pin, uint8_t brightness);
   void handleAnimation();
@@ -48,6 +50,8 @@ public:
   void fadeOut(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
   void fadeIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
   void fadeWalk(uint16_t firstLED, uint16_t lastLED, uint32_t wait);
+
+  void solid(uint16_t firstLED, uint16_t lastLED);
 };
 
 #endif

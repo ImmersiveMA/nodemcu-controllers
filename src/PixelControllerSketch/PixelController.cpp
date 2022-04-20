@@ -4,13 +4,20 @@ PixelController::PixelController(uint16_t leds, uint16_t pin, uint8_t brightness
   this->leds = leds;
   this->pin = pin;
   
-  strip = Adafruit_NeoPixel(leds, pin, NEO_RGB + NEO_KHZ800);
+  strip = Adafruit_NeoPixel(leds, pin, NEO_GRB + NEO_KHZ800);
   strip.setBrightness(brightness);
   strip.begin();
+
+  this->r = 255;
+  this->g = 255;
+  this->b = 255;
+
+  this->color = strip.Color(this->r, this->g, this->b);
   strip.show();
 }
 
 void PixelController::handleAnimation() {
+
   if(this->animationFunction == nullptr) return;
 
   if(delaying) {
@@ -52,6 +59,23 @@ void PixelController::setBrightness(uint8_t brightness) {
   this->strip.setBrightness(brightness);
 }
 
+void PixelController::solid(uint16_t firstLED, uint16_t lastLED) {
+  this->firstLED = firstLED;
+  this->lastLED = lastLED;
+  this->i = firstLED;
+
+  this->animationFunction = &PixelController::solidLoop;
+}
+
+void PixelController::solidLoop() {
+  this->strip.setPixelColor(this->i, this->color);
+  this->strip.show(); 
+
+  if(this->i == this->lastLED) this->i = this->firstLED;
+  else this->i++;
+
+}
+
 void PixelController::walkIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
   this->lastLED = clampLED(lastLED);
   this->i = firstLED;
@@ -65,7 +89,6 @@ void PixelController::walkInLoop() {
   this->strip.show();
 
   if(this->i == this->lastLED) {
-    Serial.print(3);
     this->animationFunction = nullptr;
     return;
   }
@@ -83,11 +106,12 @@ void PixelController::walkBack(uint16_t firstLED, uint16_t lastLED, uint32_t wai
 }
 
 void PixelController::walkBackLoop() {
-  this->strip.setPixelColor(this->i, this->color);
+  this->strip.setPixelColor(this->i, strip.Color(0, 0, 0));
   this->strip.show();
 
   if(this->i == this->firstLED) {
     this->animationFunction = nullptr;
+    this->delay(1000);
     return;
   }
 
@@ -106,15 +130,19 @@ void PixelController::fadeOut(uint16_t firstLED, uint16_t lastLED, uint32_t wait
 
 void PixelController::fadeOutLoop() {
   this->strip.fill(this->strip.Color((this->r / 100.00 * this->i), (this->g / 100.00 * this->i), (this->b / 100.00 * this->i)), this->firstLED, this->lastLED - this->firstLED);
+  this->strip.show();
 
   if(this->i == 0) {
     this->animationFunction = nullptr;
+    this->delay(1000);
     return;
   }
 
   this->i -= 10;
   this->delay(this->j);
 }
+
+
 
 void PixelController::fadeIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait) {
   this->lastLED = clampLED(lastLED);
@@ -127,6 +155,7 @@ void PixelController::fadeIn(uint16_t firstLED, uint16_t lastLED, uint32_t wait)
 
 void PixelController::fadeInLoop() {
   this->strip.fill(this->strip.Color((this->r / 100.00 * this->i), (this->g / 100.00 * this->i), (this->b / 100.00 * this->i)), this->firstLED, this->lastLED - this->firstLED);
+  this->strip.show();
 
   if(this->i == 100) {
     this->animationFunction = nullptr;
@@ -167,10 +196,10 @@ void PixelController::fadeWalkLoop() {
   if(this->j == this->i) {
     if(this->i < this->arrSize - 1) this->i++;
     this->j = 0;
-  } else this->j++;
 
-  this->strip.show();
-  this->delay(this->h);
+    this->strip.show();
+    this->delay(this->h);
+  } else this->j++;
 }
 
 
